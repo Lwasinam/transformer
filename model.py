@@ -208,27 +208,28 @@ class Transformer(nn.Module):
         super(Transformer, self).__init__()
     
        
-        # self.encoder = Encoder(number_of_block,d_model, head, d_ff )
-        # self.decoder = Decoder(number_of_block, d_model, head, d_ff )
-        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8, batch_first=True)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
+        self.encoder = Encoder(number_of_block,d_model, head, d_ff )
+        self.decoder = Decoder(number_of_block, d_model, head, d_ff )
+        # encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8, batch_first=True)
+        # self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
 
-        decoder_layer = nn.TransformerDecoderLayer(d_model=512, nhead=8, batch_first=True)
-        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
+        # decoder_layer = nn.TransformerDecoderLayer(d_model=512, nhead=8, batch_first=True)
+        # self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
         self.projection = ProjectionLayer(d_model, target_vocab_size)
         self.source_embedding = InputEmbeddings(d_model,source_vocab_size )
         self.target_embedding = InputEmbeddings(d_model,target_vocab_size)
         self.positional_encoding = PositionEncoding(seq_len, d_model, batch)
+
    
     def encode(self,x, src_mask):
         x = self.source_embedding(x)
-        x = self.positional_encoding(x)
-        return self.encoder(x)
+        # x = self.positional_encoding(x)
+        return self.encoder(x, src_mask)
        
     def decode(self,x, src_mask, tgt_mask, encoder_output):
         x = self.target_embedding(x)
-        x = self.positional_encoding(x)
-        return self.decoder(x,encoder_output)
+        # x = self.positional_encoding(x)
+        return self.decoder(x, src_mask, tgt_mask, encoder_output,)
         
     def project(self, x):
         return self.projection(x)
