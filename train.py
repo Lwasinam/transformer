@@ -213,7 +213,7 @@ def train_model(config):
         model.train()
         batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch {epoch:02d}")
         for batch in batch_iterator:
-            optimizer.zero_grad(set_to_none=True)
+            optimizer.zero_grad()
 
             encoder_input = batch['encoder_input'].to(device) # (b, seq_len)
             decoder_input = batch['decoder_input'].to(device) # (B, seq_len)
@@ -221,7 +221,7 @@ def train_model(config):
             decoder_mask = batch['decoder_mask'].to(device) # (B, 1, seq_len, seq_len)
 
             # Run the tensors through the encoder, decoder and the projection layer
-            
+           
             encoder_output = model.encode(encoder_input, encoder_mask) # (B, seq_len, d_model)
             decoder_output = model.decode(decoder_input, encoder_mask, decoder_mask, encoder_output) # (B, seq_len, d_model)
             proj_output = model.project(decoder_output)

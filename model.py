@@ -51,7 +51,7 @@ class PositionEncoding(nn.Module):
         self.register_buffer('positional_encoding', positional_encoding)
     
     def forward(self, x):  
-         x =  x + (self.positional_encoding[:, :x.size(1)])
+         x = x + (self.positional_encoding[:, :x.shape[1], :]).requires_grad_(False) # (batch, seq_len, d_model)
          return self.dropout(x)
 
 
@@ -208,8 +208,13 @@ class Transformer(nn.Module):
         super(Transformer, self).__init__()
     
        
-        self.encoder = Encoder(number_of_block,d_model, head, d_ff )
-        self.decoder = Decoder(number_of_block, d_model, head, d_ff )
+        # self.encoder = Encoder(number_of_block,d_model, head, d_ff )
+        # self.decoder = Decoder(number_of_block, d_model, head, d_ff )
+        encoder_layer = nn.TransformerEncoderLayer(d_model=512, nhead=8, batch_first=True)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
+
+        decoder_layer = nn.TransformerDecoderLayer(d_model=512, nhead=8, batch_first=True)
+        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=6)
         self.projection = ProjectionLayer(d_model, target_vocab_size)
         self.source_embedding = InputEmbeddings(d_model,source_vocab_size )
         self.target_embedding = InputEmbeddings(d_model,target_vocab_size)
@@ -218,12 +223,12 @@ class Transformer(nn.Module):
     def encode(self,x, src_mask):
         x = self.source_embedding(x)
         x = self.positional_encoding(x)
-        return self.encoder(x, src_mask)
+        return self.encoder(x)
        
     def decode(self,x, src_mask, tgt_mask, encoder_output):
         x = self.target_embedding(x)
         x = self.positional_encoding(x)
-        return self.decoder(x, src_mask,tgt_mask, encoder_output )
+        return self.decoder(x,encoder_output)
         
     def project(self, x):
         return self.projection(x)
