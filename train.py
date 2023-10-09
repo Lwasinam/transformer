@@ -24,8 +24,8 @@ import torchmetrics
 from torch.utils.tensorboard import SummaryWriter
 
 def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_len, device):
-    sos_idx = tokenizer_tgt.token_to_id('[SOS]')
-    eos_idx = tokenizer_tgt.token_to_id('[EOS]')
+    sos_idx = tokenizer_tgt.token_to_id("[SOS]")
+    eos_idx = tokenizer_tgt.token_to_id("[EOS]")
 
     # Precompute the encoder output and reuse it for every step
     encoder_output = model.encode(source, source_mask)
@@ -40,7 +40,7 @@ def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_
       
 
         # calculate output
-        out = model.decode(decoder_input, source_mask, decoder_mask, encoder_output) 
+        out =model.decode(encoder_output, source_mask,decoder_input, decoder_mask, )
      
 
         # get next token
@@ -177,7 +177,7 @@ def get_ds(config):
     return train_dataloader, val_dataloader, tokenizer_src, tokenizer_tgt
 
 def get_model(config, vocab_src_len, vocab_tgt_len):
-    model = build_transformer(config['seq_len'], config['batch_size'], vocab_tgt_len, vocab_src_len,  config['d_model'])
+    model = build_transformer(vocab_src_len, vocab_tgt_len, config['seq_len'], config['seq_len'])
     return model
 
 def train_model(config):
@@ -207,7 +207,7 @@ def train_model(config):
         optimizer.load_state_dict(state['optimizer_state_dict'])
         global_step = state['global_step']
 
-    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id('[PAD]'), label_smoothing=0.1).to(device)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
     # run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['seq_len'], device, lambda msg: batch_iterator.write(msg), global_step, writer)
     for epoch in range(initial_epoch, config['num_epochs']):
         model.train()
@@ -223,7 +223,7 @@ def train_model(config):
             # Run the tensors through the encoder, decoder and the projection layer
            
             encoder_output = model.encode(encoder_input, encoder_mask) # (B, seq_len, d_model)
-            decoder_output = model.decode(decoder_input, encoder_mask, decoder_mask, encoder_output) # (B, seq_len, d_model)
+            decoder_output = model.decode(encoder_output, encoder_mask,decoder_input, decoder_mask, ) # (B, seq_len, d_model)
             proj_output = model.project(decoder_output)
            
              # (B, seq_len, vocab_size)
@@ -232,6 +232,7 @@ def train_model(config):
             label = batch['label'].to(device) # (B, seq_len)
 
             # Compute the loss using a simple cross entropy
+       
             loss = loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
             batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
 
