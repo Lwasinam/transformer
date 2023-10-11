@@ -422,10 +422,12 @@ class EncoderBlock(nn.Module):
 
     def forward(self, x, src_mask):
        # Self-attention block
-        attention = self.multiheadattention(x, x, x, src_mask)
-        x = self.layer_norm1(x + self.dropout1(attention))
+        norm = self.layer_norm1(x)
+        attention = self.multiheadattention(norm, norm, norm, src_mask)
+        x = (x + self.dropout1(attention))
 
         # Feedforward block
+        norm2 = self.layer_norm2(x)
         ff = self.feedforward(x)
         return x + self.dropout2(ff)    
 
@@ -470,15 +472,18 @@ class DecoderBlock(nn.Module):
         self.dropout3 = nn.Dropout(p=0.1)
     def forward(self, x, src_mask, tgt_mask, encoder_output):
          # Self-attention block
-        attention = self.multiheadattention(x, x, x, tgt_mask)
-        x = self.layer_norm1(x + self.dropout1(attention))
+        norm = self.layer_norm1(x)
+        attention = self.multiheadattention(norm, norm, norm, tgt_mask)
+        x = (x + self.dropout1(attention))
     
-        # Cross-attention block    
-        cross_attention = self.crossattention(x, encoder_output, encoder_output, src_mask)
-        x = self.layer_norm2(x + self.dropout2(cross_attention))
+        # Cross-attention block
+        norm2 = self.layer_norm2(x)    
+        cross_attention = self.crossattention(norm, encoder_output, encoder_output, src_mask)
+        x = (x + self.dropout2(cross_attention))
    
         # Feedforward block  
-        ff = self.feedforward(x)
+        norm3  = self.layer_norm3(x)
+        ff = self.feedforward(norm3)
         return x + self.dropout3(ff)  
 
 
@@ -497,7 +502,7 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, seq_len:int, batch:int, d_model:int,target_vocab_size:int, source_vocab_size:int, head: int = 8, d_ff: int =  2048, number_of_block: int = 4, dropout: float = 0.1) -> None:
+    def __init__(self, seq_len:int, batch:int, d_model:int,target_vocab_size:int, source_vocab_size:int, head: int = 8, d_ff: int =  2048, number_of_block: int = 6, dropout: float = 0.1) -> None:
         super(Transformer, self).__init__()
     
        
