@@ -34,7 +34,6 @@ def greedy_decode(model, source, source_mask, tokenizer_src, tokenizer_tgt, max_
     while True:
         if decoder_input.size(1) == max_len:
             break
-
         # build mask for target
         decoder_mask = causal_mask(decoder_input.size(1)).type_as(source_mask).to(device)
       
@@ -126,7 +125,7 @@ def run_validation(model, validation_ds, tokenizer_src, tokenizer_tgt, max_len, 
 
 def get_all_sentences(ds, lang):
     for item in ds:
-        yield item['translation'][lang]
+        yield item[lang]
 
 def get_or_build_tokenizer(config, ds, lang):
     tokenizer_path = Path(config['tokenizer_file'].format(lang))
@@ -143,8 +142,11 @@ def get_or_build_tokenizer(config, ds, lang):
 
 def get_ds(config):
     # It only has the train split, so we divide it overselves
-    ds_raw = load_dataset('opus_books', f"{config['lang_src']}-{config['lang_tgt']}", split='train')
-
+    ds_raw = load_dataset('Lwasinam/English_Hausa', 
+    # f"{config['lang_src']}-{config['lang_tgt']}",
+     split='train')
+    print(ds_raw[0])
+  
     # Build tokenizers
     tokenizer_src = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
     tokenizer_tgt = get_or_build_tokenizer(config, ds_raw, config['lang_tgt'])
@@ -163,8 +165,8 @@ def get_ds(config):
     max_len_tgt = 0
 
     for item in ds_raw:
-        src_ids = tokenizer_src.encode(item['translation'][config['lang_src']]).ids
-        tgt_ids = tokenizer_tgt.encode(item['translation'][config['lang_tgt']]).ids
+        src_ids = tokenizer_src.encode(item[config['lang_src']]).ids
+        tgt_ids = tokenizer_tgt.encode(item[config['lang_tgt']]).ids
         max_len_src = max(max_len_src, len(src_ids))
         max_len_tgt = max(max_len_tgt, len(tgt_ids))
 
@@ -209,7 +211,8 @@ def train_model(config):
         global_step = state['global_step']
 
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer_src.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
-    # run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['seq_len'], device, lambda msg: batch_iterator.write(msg), global_step, writer)
+ 
+
     for epoch in range(initial_epoch, config['num_epochs']):
         model.train()
         batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch {epoch:02d}")

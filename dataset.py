@@ -1,6 +1,7 @@
 import torch
 import torchvision
 from torch.utils.data import Dataset, DataLoader
+import pandas as pd
 
 class BilingualDataset(Dataset):
     def __init__(self, ds, tokenizer_src, tokenizer_tgt, src_lang, tgt_lang, seq_len):
@@ -21,9 +22,17 @@ class BilingualDataset(Dataset):
         return len(self.ds)
 
     def __getitem__(self, idx):
+    
+     
+
+        
         src_target_pair = self.ds[idx]
-        src_text = src_target_pair['translation'][self.src_lang]
-        tgt_text = src_target_pair['translation'][self.tgt_lang]
+        src_text = src_target_pair[self.src_lang]
+        tgt_text = src_target_pair[self.tgt_lang]
+        
+
+       
+     
 
         # Transform the text into tokens
         enc_input_tokens = self.tokenizer_src.encode(src_text).ids
