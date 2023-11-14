@@ -253,7 +253,7 @@ def train_model(config):
 
             global_step += 1
         model.eval()
-        val_loss = 0.0
+        eval_loss = 0.0
         # batch_iterator = tqdm(v_dataloader, desc=f"Processing Epoch {epoch:02d}")
         with torch.no_grad():
             for batch in val_dataloader:
@@ -280,7 +280,7 @@ def train_model(config):
                 eval_loss += loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
            
                 
-        avg_val_loss = val_loss / len(val_dataloader)
+        avg_val_loss = eval_loss / len(val_dataloader)
         print(f'Epoch {epoch},Validation Loss: {avg_val_loss.item()}')
 
 
