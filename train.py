@@ -252,6 +252,37 @@ def train_model(config):
             
 
             global_step += 1
+        model.eval()
+        val_loss = 0.0
+        # batch_iterator = tqdm(v_dataloader, desc=f"Processing Epoch {epoch:02d}")
+        with torch.no_grad():
+            for batch in val_dataloader:
+            
+
+                encoder_input = batch['encoder_input'].to(device) # (b, seq_len)
+                decoder_input = batch['decoder_input'].to(device) # (B, seq_len)
+                encoder_mask = batch['encoder_mask'].to(device) # (B, 1, 1, seq_len)
+                decoder_mask = batch['decoder_mask'].to(device) # (B, 1, seq_len, seq_len)
+
+                # Run the tensors through the encoder, decoder and the projection layer
+            
+                encoder_output = model.encode(encoder_input, encoder_mask) # (B, seq_len, d_model)
+                decoder_output = model.decode( decoder_input,encoder_mask,  decoder_mask, encoder_output) # (B, seq_len, d_model)
+                proj_output = model.project(decoder_output)
+            
+                # (B, seq_len, vocab_size)
+
+                # Compare the output with the label
+                label = batch['label'].to(device) # (B, seq_len)
+
+                # Compute the loss using a simple cross entropy
+        
+                eval_loss += loss_fn(proj_output.view(-1, tokenizer_tgt.get_vocab_size()), label.view(-1))
+           
+                
+        avg_val_loss = val_loss / len(val_dataloader)
+        print(f'Epoch {epoch},Validation Loss: {avg_val_loss.item()}')
+
 
         # Run validation at the end of every epoch
         run_validation(model, val_dataloader, tokenizer_src, tokenizer_tgt, config['seq_len'], device, lambda msg: batch_iterator.write(msg), global_step)
